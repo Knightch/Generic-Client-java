@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: generic-client
+  name: generic-client
+  namespace: generic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: generic-client
+  template:
+    metadata:
+      labels:
+        app: generic-client
+    spec:
+      containers:
+        - name: generic-client
+          image: generic-client
+          imagePullPolicy: Always
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "dev"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 10"]
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: generic-client
+  namespace: generic
+  labels:
+    app: generic-client
+spec:
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: generic-client
+  type: LoadBalancer
+
+---
+
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#  name: generic
+#  namespace: generic
+#  annotations:
+#    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+#spec:
+#  ingressClassName: nginx
+#  tls:
+#    - hosts:
+#        - local.eefa.io
+#      secretName: local.eefa.io-ingress-tls
+#  rules:
+#    - host: local.eefa.io
+#      http:
+#        paths:
+#          - path: /Generic(/|$)(.*)
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: Generic
+#                port:
+#                  number: 8080
